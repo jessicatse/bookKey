@@ -1,0 +1,73 @@
+{% extends 'base.html' %}
+
+{% block title %} Edit Books {% endblock %}
+
+
+{% block body %}
+
+<h3>Edit Books</h3>
+<hr>
+<form method="POST" action="{{ url_for('update_book', book_id=book['_id']) }}">
+
+    <div class="form-group">
+        <label for="book_name"> Book Name: </label>
+        <input type="text" id="book_name" name="book_name" class="form-control" value="{{ book['book_name'] }}"
+            required autofocus>
+    </div>
+
+    <div class="form-group">
+        <label for="genre" class="mr-sm-2">Genre:</label>
+        <select name="genre" id="genre" class="custom-select mr-sm-2">
+            {% for genre in all_genres %}
+            <option value="{{ genre['genre_name'] }}" {% if genre['genre_name'] == book['genre'] %}
+                SELECTED {% endif %}>{{ genre['genre_name'] }}</option>
+            {% endfor %}
+        </select>
+    </div>
+
+    <div class="form-group">
+        <label for="author" class="mr-sm-2">Author</label>
+        <select name="author" id="author" class="custom-select mr-sm-2">
+            {% for author in all_authors %}
+            <option value="{{ author['author_name'] }}" {% if author['author_name'] == book['author'] %}
+                SELECTED {% endif %}>{{ author['author_name'] }}</option>
+            {% endfor %}
+        </select>
+    </div>
+    <div class="form-group">
+        <label for="publication_year" class="mr-sm-2">Publication Year</label>
+        <select name="publication_year" id="publication_year" class="custom-select mr-sm-2">
+            {% for publication_year in all_publication_years %}
+            <option value="{{ publication_year['publication_year_name'] }}" {% if publication_year['publication_year_name'] == book['publication_year'] %}
+                SELECTED {% endif %}>{{ publication_year['publication_year_name'] }}</option>
+            {% endfor %}
+        </select>
+    </div>
+    
+    <div class="form-group">
+        <label for="notes"> Notes: </label>
+        <textarea id="notes" name="notes" class="form-control notes" rows="15">
+            {{ book['notes'] }}
+        </textarea>
+    </div>
+    <div class="form-group"> <label for=" added_by"> Added by: </label>
+        <input type="text " name="added_by" class="form-control" value="{{ book['added_by'] }}" readonly>
+    </div>
+
+    <div class="form-group"> <label for=" date_added"> Date added: </label>
+        <input type="text " name="date_added" class="form-control" value="{{ book['date_added'] }}" readonly>
+    </div>
+
+    <div class="form-group"> <label for=" date_modified"> Last modified: </label>
+        <input type="text " name="date_modified" class="form-control" value="{{ book['date_modified'] }}" readonly>
+    </div>
+
+    <div>
+        <input type="submit" class="btn btn-secondary" value="Update book"></div>
+
+</form>
+<hr>
+
+<br>
+
+{% endblock %}

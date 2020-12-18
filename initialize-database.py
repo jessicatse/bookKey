@@ -8,16 +8,16 @@ APP_ROOT = os.path.join(os.path.dirname(__file__), '..')   # refers to applicati
 dotenv_path = os.path.join(APP_ROOT, '.env')
 load_dotenv(dotenv_path)
 
-mongo = os.getenv('MONGO')
+mongo = "mongodb+srv://jtse:B0liaAtlas@cluster0.rsa9q.mongodb.net/bookKey?retryWrites=true&w=majority"
 
 client = pymongo.MongoClient(mongo)
 
-db = client['recipe_app']
+db = client['book_app']
 
 users = db['users']
 roles = db['roles']
-recipes = db['recipes']
-categories = db['categories']
+books = db['books']
+genres = db['genres']
 
 
 def add_role(role_name):
@@ -27,11 +27,11 @@ def add_role(role_name):
     return roles.insert_one(role_data)
 
 
-def add_category(category_name):
-    category_data = {
-        'category_name': category_name
+def add_genre(genre_name):
+    genre_data = {
+        'genre_name': genre_name
     }
-    return categories.insert_one(category_data)
+    return genres.insert_one(genre_data)
 
 
 def add_user(first_name, last_name, email, password, role):
@@ -47,19 +47,17 @@ def add_user(first_name, last_name, email, password, role):
     return users.insert_one(user_data)
 
 
-def add_recipe(recipe_name, category, ingredients, preparation, notes, first_name, last_name):
-    recipe_data = {
-        'recipe_name': recipe_name,
-        'category': category,
-        'ingredients': ingredients,
-        'preparation': preparation,
+def add_book(book_name, genre, author, publication_year, notes):
+    book_data = {
+        'book_name': book_name,
+        'genre': genre,
+        'author': author,
+        'publication_year': publication_year,
         'notes': notes,
-        'first_name': first_name,
-        'last_name': last_name,
         'date_added': datetime.datetime.now(),
         'date_modified': datetime.datetime.now()
     }
-    return recipes.insert_one(recipe_data)
+    return books.insert_one(book_data)
 
 
 def initial_database():
@@ -71,15 +69,15 @@ def initial_database():
     # add users
     mike = add_user('Mike', 'Colbert', 'mike@mike.com', 'abc123', 'admin')
 
-    # add categories
-    main = add_category('Main dishes')
-    drink = add_category('Drinks')
-    desserts = add_category('Desserts')
+    # add genres
+    sci_fi = add_genre('Science Fiction')
+    romance = add_genre('Romance')
+    classic = add_genre('Classic')
+  
 
    
-    # add recipe
-    chicken_parmesean = add_recipe('Chicken Parmesean', 'Main dishes',
-                                   'chicken', 'cook it good', 'cook it real good', 'Mike', 'Colbert')
+    # add book
+    oldYeller = add_book('Old Yeller', 'Classic', 'CS Lewis','1870',  'read with tissues')      
 
 
 def main():

@@ -20,16 +20,16 @@ mongo = os.getenv('MONGO')
 
 client = pymongo.MongoClient(mongo)
 
-db = client['recipe_app'] # Mongo collection
+db = client['book_app'] # Mongo collection
 users = db['users'] # Mongo document
 roles = db['roles'] # Mongo document
-categories = db['categories']
-recipes = db['recipes']
+genres = db['genres']
+books = db['books']
 
-all_recipes = recipes.find()
+all_books = books.find()
 
-for recipe in all_recipes:
-    print(recipe['notes'])
+for book in all_books:
+    print(book['notes'])
 
 
 
@@ -97,7 +97,7 @@ for recipe in all_recipes:
             .attr("id", 'TextBoxDivIngredients' + ingredientCounter);
 
           newTextBoxDiv.after().html(
-            '<input  id="recipe_ingredient" name="ingredients" type="text" class="form-control" placeholder="next ingredient" required>'
+            '<input  id="book_ingredient" name="ingredients" type="text" class="form-control" placeholder="next ingredient" required>'
           );
           newTextBoxDiv.appendTo("#TextBoxDivIngredients");
           ingredientCounter++;
@@ -170,10 +170,10 @@ for recipe in all_recipes:
     <div id="TextBoxesGroupIngredients">
         <!-- Ingredients -->
         <div id="TextBoxDivIngredients">
-            <label for="recipe_ingredients">Ingredients</label>
+            <label for="book_ingredients">Ingredients</label>
             <button id="addIngredient">+</button>
             <button id="removeIngredient" class="removeIngredientDiv">-</button>
-            <input id="recipe_ingredients" name="ingredients" type="text" value="" class="form-control">
+            <input id="book_ingredients" name="ingredients" type="text" value="" class="form-control">
         </div>
     </div>
 
@@ -190,7 +190,7 @@ for recipe in all_recipes:
 
 
 
- <input type="submit" class="btn btn-secondary" value="Add Recipe">
+ <input type="submit" class="btn btn-secondary" value="Add book">
 
 
  type="button" onclick="addItem(); return false;
@@ -204,7 +204,7 @@ for recipe in all_recipes:
         var intId = (lastField && lastField.length && lastField.data("idx") + 1) || 1;
         var fieldWrapper = $("<div class=\"form-group\" id=\"TextBoxDivIngredients" + intId + "\"/>");
         fieldWrapper.data("idx", intId);
-        var fName = $("<input type=\"text\" class=\"form-control\" id=\"recipe_ingredients\" name=\"ingredients\" />");
+        var fName = $("<input type=\"text\" class=\"form-control\" id=\"book_ingredients\" name=\"ingredients\" />");
         var removeButton = $("<input type=\"button\" class=\"remove\" value=\"-\" />");
         removeButton.click(function() {
             $(this).parent().remove();
@@ -243,15 +243,15 @@ def search_box():
     if (search_term != ''):
         return redirect(url_for('search_results', search_text=search_term))
     else:
-        return render_template("recipes.html", recipes=mongo.db.recipes.find())
+        return render_template("books.html", books=mongo.db.books.find())
 
 
 # Search results route
 @app.route('/search_results/<search_text>')
 def search_results(search_text):
-    search_results = mongo.db.recipes.find(
+    search_results = mongo.db.books.find(
         {'$text': {'$search': search_text}})
     # for item in search_results:
     #     print("Search results: ", item)
-    return render_template("search-results.html", recipes=search_results)
+    return render_template("search-results.html", books=search_results)
 # **********************************************************************    

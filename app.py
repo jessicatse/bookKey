@@ -11,21 +11,9 @@ from functools import wraps
 app = Flask(__name__)
 app.config['SECRET_KEY'] = os.getenv('SECRET_KEY')
 
-############ TO DO #############
-
-# fix it so contributors can edit and delete their own recipes, but admins can edit and delete everyone's recipes
-# add moment.js to clean up date added and date modified appearance in recipes and users
-# improve appearance of menu
-# ensure each role has access to appropriate menu choices
-# fix password so it hashes with bcrypt
-# fix print messages in functions so you can see what is happening on the server
-
-################################
-
-
 
 ## necessary for python-dotenv ##
-APP_ROOT = os.path.join(os.path.dirname(__file__), '..')   # refers to application_top
+APP_ROOT = os.path.join(os.path.dirname(__file__), '..') 
 dotenv_path = os.path.join(APP_ROOT, '.env')
 load_dotenv(dotenv_path)
 
@@ -33,11 +21,11 @@ mongo = os.getenv('MONGO')
 
 client = pymongo.MongoClient(mongo)
 
-db = client['recipe_app'] # Mongo collection
+db = client['book_app'] # Mongo collection
 users = db['users'] # Mongo document
 roles = db['roles'] # Mongo document
-categories = db['categories']
-recipes = db['recipes']
+genres = db['genres']
+books = db['books']
 
 login = LoginManager()
 login.init_app(app)
@@ -100,13 +88,7 @@ def roles_required(*role_names):
 
 @app.route('/', methods=['GET', 'POST'])
 def index():
-    #show records from the last day
-    #today = datetime.datetime.today()
-    #timedelta = datetime.timedelta(1) #one day old
-    #return render_template('index.html', all_recipes=recipes.find({"date_added": {"$gt": today - timedelta}}))
-
-    # unauthenticated users can see the 10 newest recipes in the database
-    return render_template('index.html', all_recipes=recipes.find().sort([("_id", -1)]).limit(10)) #sort newest first, limit to 10 records returned
+    return render_template('index.html', all_books=books.find().sort([("_id", -1)]).limit(10)) #sort newest first, limit to 10 records returned
 
 @app.route('/search', methods=['GET', 'POST'])
 def search():
@@ -115,7 +97,7 @@ def search():
         form = request.form
         search_term = form['search_string']
         if (search_term != ''):
-            return render_template('index.html', all_recipes=recipes.find({'$text': {'$search': search_term}}))
+            return render_template('index.html', all_books=books.find({'$text': {'$search': search_term}}))
         return url_for("index")
     print("get request")
     return url_for("index")
@@ -128,7 +110,7 @@ def about():
 # unauthenticated users can see a message on the registration page
 @app.route('/register')
 def register():
-    return 'Contact the site administrator for an account.'
+    return 'Contact the bookkey@bookkey.com for an account.'
 
 # unauthenticated users can view the login page
 @app.route('/login', methods=['GET', 'POST'])
@@ -146,17 +128,17 @@ def login():
             if not next_page or url_parse(next_page).netloc != '':
                 next_page = url_for('index')
                 return redirect(next_page)
-            flash("Logged in successfully!", category='success')
+            flash("Logged in successfully!", genre='success')
             return redirect(request.args.get("next") or url_for("index"))
 
-        flash("Wrong username or password!", category='danger')
+        flash("Wrong username or password!", genre='danger')
     return render_template('login.html')
 
 # authenticated users can logout
 @app.route('/logout', methods=['GET', 'POST'])
 def logout():
     logout_user()
-    flash('You have successfully logged out.', 'success')
+    flash('You have successfully logged out; thank you for using BookKey', 'success')
     return redirect(url_for('login'))
 
 # authenticated users can view their account details
@@ -278,136 +260,135 @@ def admin_update_user(user_id):
     return render_template('user-admin.html', all_roles=roles.find(), all_users=users.find())
 
 
-##########  Admin Functionality - Recipe Categories ##########
+##########  Admin Functionality - book genres ##########
 
-@app.route('/recipes/add-category', methods=['POST'])
+@app.route('/books/add-genre', methods=['POST'])
 @login_required
-@roles_required('admin')
-def add_category():
+@roles_required('admin, contributor')
+def add_genre():
     if request.method == 'POST':
         form = request.form
-        category = users.find_one({"category_name": request.form['new_category']})
-        if category:
-            flash('This category is already registerd.', 'warning')
+        genre = users.find_one({"genre_name": request.form['new_genre']})
+        if genre:
+            flash('This genre is already an option.', 'warning')
             return url_for('/admin_users')
-        new_category = {
-            'category_name': form['new_category'],
+        new_genre = {
+            'genre_name': form['new_genre'],
         }
-        categories.insert_one(new_category)
-        flash(new_category['category_name'] + ' has been added.', 'success')
-        return redirect(url_for('admin_recipes'))
-    return render_template('recipe-admin.html', all_categories=categories.find())
+        genres.insert_one(new_genre)
+        flash(new_genre['genre_name'] + ' has been added.', 'success')
+        return redirect(url_for('admin_books'))
+    return render_template('book-admin.html', all_genres=genres.find())
 
-@app.route('/recipes/delete_category/<category_id>', methods=['GET'])
+@app.route('/books/delete_genre/<genre_id>', methods=['GET'])
 @login_required
 @roles_required('admin')
-def delete_category(category_id):
-    delete_category = categories.find_one({'_id': ObjectId(category_id)})
-    if delete_category:
-        categories.delete_one(delete_category)
-        flash(delete_category['category_name'] + ' has been deleted.', 'danger')
-        return redirect(url_for('admin_recipes'))
-    flash('Recipe not found.', 'warning')
-    return redirect(url_for('admin_recipes'))
+def delete_genre(genre_id):
+    delete_genre = genres.find_one({'_id': ObjectId(genre_id)})
+    if delete_genre:
+        genres.delete_one(delete_genre)
+        flash(delete_genre['genre_name'] + ' has been deleted.', 'danger')
+        return redirect(url_for('admin_books'))
+    flash('Book not found; recheck the shelf.', 'warning')
+    return redirect(url_for('admin_books'))
 
     
 
-##########  Recipes ##########
+##########  books ##########
 
-# authenticated users can view al the recipes
-@app.route('/recipes', methods=['GET', 'POST'])
+# authenticated users can view al the books
+@app.route('/books', methods=['GET', 'POST'])
 @login_required
 @roles_required('admin', 'contributor', 'user')
-def view_recipes():
-    return render_template('recipes.html', all_recipes=recipes.find())
+def view_books():
+    return render_template('books.html', all_books=books.find())
 
-# authenticated users can print a recipe
-@app.route('/recipes/print-recipe/<recipe_id>', methods=['GET', 'POST'])
+# authenticated users can print a book
+@app.route('/books/print-book/<book_id>', methods=['GET', 'POST'])
 @login_required
 @roles_required('admin', 'contributor', 'user')
-def print_recipe(recipe_id):
-    print_recipe = recipes.find_one({'_id': ObjectId(recipe_id)})
-    if print_recipe:
-        return render_template('print-recipe.html', recipe=print_recipe)
-    flash('Recipe not found.', 'danger')
-    return redirect(url_for('view_recipes'))
+def print_book(book_id):
+    print_book = books.find_one({'_id': ObjectId(book_id)})
+    if print_book:
+        return render_template('print-book.html', book=print_book)
+    flash('Book not found; recheck the shelf.', 'danger')
+    return redirect(url_for('view_books'))
 
-# administrators users can manage all recipes
-@app.route('/recipes/admin', methods=['GET', 'POST'])
+# administrators users can manage all books
+@app.route('/books/admin', methods=['GET', 'POST'])
 @login_required
-@roles_required('admin')
-def admin_recipes():
-    return render_template('recipe-admin.html', all_categories=categories.find(), all_recipes=recipes.find())
+@roles_required('admin', 'contributor', 'user')
+def admin_books():
+    return render_template('book-admin.html', all_genres=genres.find(), all_books=books.find())
 
-# administrators and contributors can add new recipes
-@app.route('/recipes/add-recipe', methods=['GET', 'POST'])
+# administrators and contributors can add new books
+@app.route('/books/add-book', methods=['GET', 'POST'])
 @login_required
-@roles_required('admin', 'contributor')
-def add_recipe():
+@roles_required('admin', 'contributor', 'user')
+def add_book():
     if request.method == 'POST':
         form = request.form
               
-        new_recipe = {
-            'recipe_name': form['recipe_name'],
-            'category': form['category'],
-            'ingredients': form.getlist('ingredients'),
-            'preparation': form.getlist('steps'),
+        new_book = {
+            'book_name': form['book_name'],
+            'genre': form['genre'],
+            'book_author': form('book_author'),
+            'publication_year': form('publication_year'),
             'notes': form['notes'],
-            'recipe_owner': form['recipe_owner'],
             'added_by': form['added_by'],
             'date_added': datetime.datetime.now(),
             'date_modified': datetime.datetime.now()
         }
-        recipes.insert_one(new_recipe)
-        flash('New recipe has been added.', 'success')
-        return redirect(url_for('view_recipes'))
-    return render_template('new-recipe.html', all_categories=categories.find())
+        books.insert_one(new_book)
+        flash('New book has been added to the shelf.', 'success')
+        return redirect(url_for('view_books'))
+    return render_template('new-book.html', all_genres=genres.find())
 
-@app.route('/recipes/edit-recipe/<recipe_id>', methods=['GET', 'POST'])
+@app.route('/books/edit-book/<book_id>', methods=['GET', 'POST'])
 @login_required
-@roles_required('admin')
-def edit_recipe(recipe_id):
-    edit_recipe = recipes.find_one({'_id': ObjectId(recipe_id)})
-    if edit_recipe:
-        return render_template('edit-recipe.html', recipe=edit_recipe, all_categories=categories.find())
-    flash('Recipe not found.', 'danger')
-    return redirect(url_for('admin_recipes'))
+@roles_required('admin, contributor, user')
+def edit_book(book_id):
+    edit_book = books.find_one({'_id': ObjectId(book_id)})
+    if edit_book:
+        return render_template('edit-book.html', book=edit_book, all_genres=genres.find())
+    flash('Book not found; recheck the shelf.', 'danger')
+    return redirect(url_for('admin_books'))
 
-@app.route('/recipes/update-recipe/<recipe_id>', methods=['POST'])
+@app.route('/books/update-book/<book_id>', methods=['POST'])
 @login_required
-@roles_required('admin')
-def update_recipe(recipe_id):
+@roles_required('admin', 'contributor', 'user')
+def update_book(book_id):
     if request.method == 'POST':
         form = request.form
-        recipes.update({'_id': ObjectId(recipe_id)},
+        books.update({'_id': ObjectId(book_id)},
             {
-            'recipe_name': form['recipe_name'],
-            'category': form['category'],
+            'book_name': form['book_name'],
+            'genre': form['genre'],
             'ingredients': form.getlist('ingredients'),
             'preparation': form.getlist('steps'),
             'notes': form['notes'],
-            'recipe_owner': form['recipe_owner'],
+            'book_owner': form['book_owner'],
             'added_by': form['added_by'],
             'date_added': form['date_added'],
             'date_modified': datetime.datetime.now()
             })
-        update_recipe = recipes.find_one({'_id': ObjectId(recipe_id)})
-        flash(update_recipe['recipe_name'] + ' has been updated.', 'success')
-        return redirect(url_for('view_recipes'))
-    return render_template('edit-recipe.html', all_categories=categories.find())
+        update_book = books.find_one({'_id': ObjectId(book_id)})
+        flash(update_book['book_name'] + ' has been updated.', 'success')
+        return redirect(url_for('view_books'))
+    return render_template('edit-book.html', all_genres=genres.find())
 
-# administrators can delete recipes
-@app.route('/recipes/delete-recipe/<recipe_id>', methods=['POST'])
+# administrators can delete books
+@app.route('/books/delete-book/<book_id>', methods=['POST'])
 @login_required
-@roles_required('admin')
-def delete_recipe(recipe_id):
-    delete_recipe = recipes.find_one({'_id': ObjectId(recipe_id)})
-    if delete_recipe:
-        recipes.delete_one(delete_recipe)
-        flash(delete_recipe['recipe_name'] + ' has been deleted.', 'danger')
-        return redirect(url_for('view_recipes'))
-    flash('Recipe not found.', 'warning')
-    return redirect(url_for('view_recipes'))
+@roles_required('admin', 'contributor', 'user')
+def delete_book(book_id):
+    delete_book = books.find_one({'_id': ObjectId(book_id)})
+    if delete_book:
+        books.delete_one(delete_book)
+        flash(delete_book['book_name'] + ' has been deleted.', 'danger')
+        return redirect(url_for('view_books'))
+    flash('Book not found; recheck the shelf.', 'warning')
+    return redirect(url_for('view_books'))
 
 
 if __name__ == "__main__":

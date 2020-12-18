@@ -1,0 +1,76 @@
+{% extends 'base.html' %}
+
+{% block title %} Shelf Cleaning {% endblock %}
+
+
+{% block body %} 
+
+<h1>Shelf Cleaning Admin Page</h1>
+<hr>
+<div class="admin_left">
+    <h3 >Genres</h3>
+    <form method='POST' action="{{url_for('add_genre')}}">
+        <input type="text" name="new_genre" placeholder="add new genre"><input type="submit" value="Submit">
+    </form>
+    <hr>
+
+        {% for genre in all_genres %}
+    <p><a
+        href="{{ (url_for('delete_genre', genre_id=genre['_id'])) }}"><img src="{{ url_for('static', filename='icons/delete.png') }}"></a>
+        &nbsp;{{ genre.genre_name }} </p>
+        {% endfor %}
+        <br clear="all">
+    
+</div>
+<br clear="all">
+
+<h3>All Books</h3>
+<form method="GET" action="{{ url_for('add_book') }}">
+    <button type="submit" class="btn btn-info">Add a new book</button>
+</form>
+
+<br>
+{% if all_books %}
+<table class="table table-hover">
+    <thead>
+        <tr>
+            <th scope="col">Book Name</th>
+            <th scope="col">Genre</th>
+            <th scope="col">Author</th>
+            <th scope="col">Publication Year</th>   
+            <th scope="col">Notes</th>         
+            <th scope="col">Added By </th>
+            <th scope="col">Date Added</th>
+        </tr>
+    </thead>
+
+    <tbody>
+        {% for book in all_books %}
+        <tr>
+
+            <td> {{ book['book_name'] }}</td>
+            <td> {{ book['genre'] }}</td>
+            <td> {{ book['book_author'] }}</td>
+            <td> {{ book['publication_year'] }}</td>
+            <td> {{ book['notes'] }}</td>
+            <td> {{ book['added_by'] }}</td>
+            <td> {{ book['date_added'] }}</td>
+            <td>
+                <form action="{{ url_for('edit_book', book_id=book['_id']) }}" method="POST">
+                    <input type="submit" class="btn btn-primary" value="Details" />
+                </form>
+            </td>
+            <td>
+                <form action="{{ url_for('delete_book', book_id=book['_id']) }}" method="POST">
+                    <input type="submit" class="btn btn-danger" value="Delete" />
+                </form>
+            </td>
+
+           
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endif %}
+
+{% endblock %}

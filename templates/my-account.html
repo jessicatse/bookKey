@@ -1,11 +1,11 @@
 {% extends 'base.html' %}
 
-{% block title %} User Edit {% endblock %}
+{% block title %} Edit Account {% endblock %}
 
 
 {% block body %} 
 
-<h3>Edit my account</h3>
+<h3>Edit Account</h3>
   <hr>
   {% if user %}
 <form method="POST" action="{{ url_for('update_myaccount', user_id=user['_id']) }}">
